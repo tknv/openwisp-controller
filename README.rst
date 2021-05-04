@@ -1154,7 +1154,7 @@ Download CA(crl)
 
     GET /api/v1/controller/ca/{id}/crl/
 
-The above endpoint triggers the download of ``{id}.crl`` file containing 
+The above endpoint triggers the download of ``{id}.crl`` file containing
 up to date CRL of that specific CA.
 
 Delete CA
@@ -2069,6 +2069,20 @@ It is not emitted when the device is created.
 The signal is emitted when the device group changes.
 
 It is not emitted when the device is created.
+
+``vpn_peers_changed``
+~~~~~~~~~~~~~~~~~~~~~
+
+**Path**: ``openwisp_controller.config.signals.vpn_peers_changed``
+
+**Arguments**:
+
+- ``instance``: instance of ``Vpn``.
+
+The signal is emitted when the peers of VPN server gets changed.
+
+It is only emitted for ``Vpn`` object with **Wireguard** or
+**VXLAN over Wireguard** backend.
 
 Setup (integrate in an existing django project)
 -----------------------------------------------
