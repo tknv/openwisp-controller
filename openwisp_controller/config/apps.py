@@ -12,6 +12,7 @@ from swapper import get_model_name, load_model
 from openwisp_utils.admin_theme import register_dashboard_chart
 from openwisp_utils.admin_theme.menu import register_menu_group
 
+from ..subnet_division.signals import subnet_ips_provisioned
 from . import settings as app_settings
 from .signals import (
     config_modified,
@@ -46,6 +47,9 @@ class ConfigConfig(AppConfig):
         self.config_model = load_model('config', 'Config')
         self.vpn_model = load_model('config', 'Vpn')
         self.vpnclient_model = load_model('config', 'VpnClient')
+        self.subnet_division_rule_model = load_model(
+            'subnet_division', 'SubnetDivisionRule'
+        )
         self.cert_model = load_model('django_x509', 'Cert')
 
     def connect_signals(self):
@@ -94,6 +98,11 @@ class ConfigConfig(AppConfig):
             self.vpn_model.update_vpn_server_configuration,
             sender=self.vpn_model,
             dispatch_uid='vpn.update_vpn_server_configuration',
+        )
+        subnet_ips_provisioned.connect(
+            self.vpnclient_model.assign_ip,
+            sender=self.subnet_division_rule_model,
+            dispatch_uid='vpnclient.assign_ip',
         )
         post_save.connect(
             self.config_model.certificate_updated,

@@ -459,13 +459,18 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         """
         peers = []
         for vpnclient in self._get_peer_queryset():
-            ip_address = ipaddress.ip_address(vpnclient.ip.ip_address)
-            peers.append(
-                {
-                    'public_key': vpnclient.public_key,
-                    'allowed_ips': f'{ip_address}/{ip_address.max_prefixlen}',
-                }
-            )
+            try:
+                ip_address = ipaddress.ip_address(vpnclient.ip.ip_address)
+                peers.append(
+                    {
+                        'public_key': vpnclient.public_key,
+                        'allowed_ips': f'{ip_address}/{ip_address.max_prefixlen}',
+                    }
+                )
+            except AttributeError:
+                # This code might get executed before IP address is provisioned,
+                # then vpn_client.ip_address would be null
+                continue
         return peers
 
     def _add_vxlan(self, config):
@@ -603,6 +608,15 @@ class AbstractVpnClient(models.Model):
         except ObjectDoesNotExist:
             pass
 
+    @classmethod
+    def assign_ip(cls, instance, ip_obj, **kwargs):
+        def _assign_ip_address():
+            instance.ip = ip_obj
+            instance.full_clean()
+            instance.save()
+
+        transaction.on_commit(_assign_ip_address)
+
     def _auto_create_cert_extra(self, cert):
         """
         sets the organization on the created client certificate
@@ -664,5 +678,11 @@ class AbstractVpnClient(models.Model):
 
     def _auto_ip(self):
         if not self.vpn.subnet:
+            return
+        if self.vpn.subnet.subnetdivisionrule_set.filter(
+            organization_id=self.config.device.organization
+        ).exists():
+            # Do not assign IP here if the VPN has a subnet with a subnet
+            # rule for the organization of the device
             return
         self.ip = self.vpn.subnet.request_ip()

@@ -9,6 +9,8 @@ from django.utils.translation import ugettext_lazy as _
 from netaddr import IPNetwork
 from swapper import load_model
 
+from ..signals import subnet_ips_provisioned
+
 logger = logging.getLogger(__name__)
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
@@ -76,8 +78,15 @@ class BaseSubnetDivisionRuleType(object):
         generated_subnets = cls.create_subnets(
             instance, division_rule, max_subnet, generated_indexes
         )
-        cls.create_ips(instance, division_rule, generated_subnets, generated_indexes)
+        generated_ips = cls.create_ips(
+            instance, division_rule, generated_subnets, generated_indexes
+        )
         SubnetDivisionIndex.objects.bulk_create(generated_indexes)
+
+        if generated_ips:
+            subnet_ips_provisioned.send(
+                sender=SubnetDivisionRule, instance=instance, ip_obj=generated_ips[0]
+            )
 
     @classmethod
     def get_organization(cls, instance):
@@ -173,6 +182,7 @@ class BaseSubnetDivisionRuleType(object):
                 )
 
         IpAddress.objects.bulk_create(generated_ips)
+        return generated_ips
 
     @staticmethod
     def destroy_provisioned_subnets_ips(instance, **kwargs):

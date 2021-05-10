@@ -6,7 +6,10 @@ from django.core.exceptions import ValidationError
 from django.test import TransactionTestCase
 from swapper import load_model
 
+from openwisp_utils.tests import catch_signal
+
 from .. import tasks
+from ..signals import subnet_ips_provisioned
 from .helpers import SubnetDivisionTestMixin
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
@@ -33,10 +36,7 @@ class TestSubnetDivisionRule(
 
     @property
     def ip_query(self):
-        return IpAddress.objects.exclude(
-            id__in=[self.vpn_server.ip_id]
-            + list(self.vpn_server.vpnclient_set.values_list('ip_id', flat=True))
-        )
+        return IpAddress.objects.exclude(id=self.vpn_server.ip_id)
 
     def test_field_validations(self):
         default_options = {
@@ -338,6 +338,18 @@ class TestSubnetDivisionRule(
         )
         # Check 10.0.0.1 is not provisioned again
         self.assertEqual(SubnetDivisionIndex.objects.filter(ip_id=ip.id).count(), 0)
+
+    def test_subnet_ips_provisioned_signal(self):
+        rule = self._get_vpn_subdivision_rule()
+        with catch_signal(subnet_ips_provisioned) as handler:
+            self.config.templates.add(self.template)
+            handler.assert_called_once()
+        subnet_query = self.subnet_query.filter(organization_id=self.org.id).exclude(
+            id=self.master_subnet.id
+        )
+        self.assertEqual(
+            subnet_query.count(), rule.number_of_subnets,
+        )
 
 
 class TestCeleryTasks(TestCase):
