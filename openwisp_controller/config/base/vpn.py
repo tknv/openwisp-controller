@@ -273,7 +273,7 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         if self.ip:
             context[context_keys['server_ip_address']] = self.ip.ip_address
             context[
-                context_keys['server_ip_max_prefix']
+                context_keys['server_ip_network']
             ] = f'{self.ip.ip_address}/{self.subnet.subnet.max_prefixlen}'
         return context
 
@@ -333,7 +333,7 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
             context_keys.update(
                 {
                     'server_ip_address': 'server_ip_address_{}'.format(pk),
-                    'server_ip_max_prefix': 'server_ip_max_prefix_{}'.format(pk),
+                    'server_ip_network': 'server_ip_network_{}'.format(pk),
                 }
             )
         return context_keys
