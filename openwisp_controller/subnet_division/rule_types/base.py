@@ -9,7 +9,7 @@ from django.utils.translation import ugettext_lazy as _
 from netaddr import IPNetwork
 from swapper import load_model
 
-from ..signals import subnet_ips_provisioned
+from ..signals import subnet_provisioned
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +49,39 @@ class BaseSubnetDivisionRuleType(object):
 
     @classmethod
     def provision_receiver(cls, instance, **kwargs):
+        def _provision_receiver():
+            provisioned = cls.create_subnets_ips(instance, rule_type, **kwargs)
+            cls.post_provision_handler(instance, provisioned, **kwargs)
+            cls.subnet_provisioned_signal_emitter(instance, provisioned)
+
+        if kwargs['created'] is False:
+            return
         rule_type = f'{cls.__module__}.{cls.__name__}'
-        transaction.on_commit(
-            lambda: cls.create_subnets_ips(instance, rule_type, **kwargs)
-        )
+        transaction.on_commit(_provision_receiver)
 
     @classmethod
     def destroyer_receiver(cls, instance, **kwargs):
         cls.destroy_provisioned_subnets_ips(instance, **kwargs)
 
+    @staticmethod
+    def post_provision_handler(instance, provisioned, **kwargs):
+        """
+        This method should be overridden in inherited rule types to
+        perform any operation on provisioned subnets and IP addresses.
+        :param instance: object that triggered provisioning
+        :param provisioned: dictionary containing subnets and IP addresses
+            provisioned, None if nothing is provisioned
+        """
+        pass
+
+    @staticmethod
+    def subnet_provisioned_signal_emitter(instance, provisioned):
+        subnet_provisioned.send(
+            sender=SubnetDivisionRule, instance=instance, provisioned=provisioned
+        )
+
     @classmethod
     def create_subnets_ips(cls, instance, rule_type, **kwargs):
-        if not kwargs['created']:
-            return
-
         try:
             organization_id = cls.get_organization(instance)
             subnet = cls.get_subnet(instance)
@@ -82,11 +101,7 @@ class BaseSubnetDivisionRuleType(object):
             instance, division_rule, generated_subnets, generated_indexes
         )
         SubnetDivisionIndex.objects.bulk_create(generated_indexes)
-
-        if generated_ips:
-            subnet_ips_provisioned.send(
-                sender=SubnetDivisionRule, instance=instance, ip_obj=generated_ips[0]
-            )
+        return {'subnets': generated_subnets, 'ip_addresses': generated_ips}
 
     @classmethod
     def get_organization(cls, instance):

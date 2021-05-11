@@ -608,15 +608,6 @@ class AbstractVpnClient(models.Model):
         except ObjectDoesNotExist:
             pass
 
-    @classmethod
-    def assign_ip(cls, instance, ip_obj, **kwargs):
-        def _assign_ip_address():
-            instance.ip = ip_obj
-            instance.full_clean()
-            instance.save()
-
-        transaction.on_commit(_assign_ip_address)
-
     def _auto_create_cert_extra(self, cert):
         """
         sets the organization on the created client certificate
@@ -680,7 +671,11 @@ class AbstractVpnClient(models.Model):
         if not self.vpn.subnet:
             return
         if self.vpn.subnet.subnetdivisionrule_set.filter(
-            organization_id=self.config.device.organization
+            organization_id=self.config.device.organization,
+            type=(
+                'openwisp_controller.subnet_division.rule_types.'
+                'vpn.VpnSubnetDivisionRuleType'
+            ),
         ).exists():
             # Do not assign IP here if the VPN has a subnet with a subnet
             # rule for the organization of the device

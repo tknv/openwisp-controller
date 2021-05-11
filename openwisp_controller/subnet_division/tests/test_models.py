@@ -9,7 +9,7 @@ from swapper import load_model
 from openwisp_utils.tests import catch_signal
 
 from .. import tasks
-from ..signals import subnet_ips_provisioned
+from ..signals import subnet_provisioned
 from .helpers import SubnetDivisionTestMixin
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
@@ -339,14 +339,29 @@ class TestSubnetDivisionRule(
         # Check 10.0.0.1 is not provisioned again
         self.assertEqual(SubnetDivisionIndex.objects.filter(ip_id=ip.id).count(), 0)
 
-    def test_subnet_ips_provisioned_signal(self):
+    def test_subnet_provisioned_signal(self):
         rule = self._get_vpn_subdivision_rule()
-        with catch_signal(subnet_ips_provisioned) as handler:
+        with catch_signal(subnet_provisioned) as handler:
             self.config.templates.add(self.template)
             handler.assert_called_once()
         subnet_query = self.subnet_query.filter(organization_id=self.org.id).exclude(
             id=self.master_subnet.id
         )
+        self.assertEqual(
+            subnet_query.count(), rule.number_of_subnets,
+        )
+
+    def test_vpn_rule_assigns_vpnclient_ip(self):
+        rule = self._get_vpn_subdivision_rule()
+        subnet_query = self.subnet_query.filter(organization_id=self.org.id).exclude(
+            id=self.master_subnet.id
+        )
+        self.config.templates.add(self.template)
+        expected_assigned_ip = self.config.subnetdivisionindex_set.get(
+            keyword=f'{rule.label}_subnet1_ip1'
+        ).ip
+        vpn_client = self.config.vpnclient_set.first()
+        self.assertEqual(vpn_client.ip, expected_assigned_ip)
         self.assertEqual(
             subnet_query.count(), rule.number_of_subnets,
         )
