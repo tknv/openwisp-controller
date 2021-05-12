@@ -459,7 +459,7 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         """
         peers = []
         for vpnclient in self._get_peer_queryset():
-            try:
+            if vpnclient.ip:
                 ip_address = ipaddress.ip_address(vpnclient.ip.ip_address)
                 peers.append(
                     {
@@ -467,10 +467,6 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
                         'allowed_ips': f'{ip_address}/{ip_address.max_prefixlen}',
                     }
                 )
-            except AttributeError:
-                # This code might get executed before IP address is provisioned,
-                # then vpn_client.ip_address would be null
-                continue
         return peers
 
     def _add_vxlan(self, config):
@@ -497,7 +493,8 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         """
         peers = []
         for vpnclient in self._get_peer_queryset():
-            peers.append({'vni': vpnclient.vni, 'remote': vpnclient.ip.ip_address})
+            if vpnclient.ip:
+                peers.append({'vni': vpnclient.vni, 'remote': vpnclient.ip.ip_address})
         return peers
 
 
