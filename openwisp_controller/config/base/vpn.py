@@ -450,7 +450,7 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         # peers are also added automatically (and cached)
         config['wireguard'][0]['peers'] = self._get_wireguard_peers()
         # internal IP address of wireguard interface
-        config['wireguard'][0]['address'] = '{{ ip_address }}/{{ subnet_prefix }}'
+        config['wireguard'][0]['address'] = '{{ ip_address }}/{{ subnet_prefixlen }}'
 
     @cache_memoize(_PEER_CACHE_TIMEOUT, args_rewrite=_peer_cache_key)
     def _get_wireguard_peers(self):
