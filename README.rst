@@ -1925,7 +1925,8 @@ organization.
    (assigning an IP address to each VPN peer). You can create a new subnet or
    select an existing one from the dropdown menu. You can also assign an
    **Internal IP** to the WireGuard Server or leave it empty for OpenWISP to
-   configure.
+   configure. This IP address will be used by the WireGuard interface on
+   server.
 5. We have set the **Webhook Endpoint** as ``https://wireguard-server.mydomain.com:8081/trigger-update``
    for this example. You will need to update this according to you VPN upgrader
    endpoint. Set **Webhook AuthToken** to any strong passphrase, this will be
@@ -2027,7 +2028,8 @@ organization.
    (assigning an IP address to each VPN peer). You can create a new subnet or
    select an existing one from the dropdown menu. You can also assign an
    **Internal IP** to the WireGuard Server or leave it empty for OpenWISP to
-   configure.
+   configure. This IP address will be used by the WireGuard interface on
+   server.
 5. We have set the **Webhook Endpoint** as ``https://wireguard-vxlan-server.mydomain.com:8081/trigger-update``
    for this example. You will need to update this according to you VPN upgrader
    endpoint. Set **Webhook AuthToken** to any strong passphrase, this will be
