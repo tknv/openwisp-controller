@@ -495,7 +495,7 @@ class TestWireguard(BaseTestVpn, TestWireguardVpnMixin, TestCase):
 
         with self.subTest('test context keys'):
             context_keys = vpn._get_auto_context_keys()
-            self.assertIn('pub_key', context_keys)
+            self.assertIn('public_key', context_keys)
             self.assertIn('ip_address', context_keys)
             self.assertIn('server_ip_address', context_keys)
             self.assertIn('server_ip_network', context_keys)
@@ -580,7 +580,7 @@ class TestWireguardTransaction(BaseTestVpn, TestWireguardVpnMixin, TransactionTe
             self.assertEqual(context[f'ip_address_{pk}'], '10.0.0.2')
             self.assertEqual(context[f'server_ip_address_{pk}'], '10.0.0.1')
             self.assertEqual(context[f'server_ip_network_{pk}'], '10.0.0.1/32')
-            self.assertEqual(context[f'pub_key_{pk}'], vpn.public_key)
+            self.assertEqual(context[f'public_key_{pk}'], vpn.public_key)
 
         with self.subTest('cache update when a new peer is added'):
             device2 = self._create_device_config(

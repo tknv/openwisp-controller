@@ -269,7 +269,7 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
                 }
             )
         if self.public_key:
-            context[context_keys['pub_key']] = self.public_key
+            context[context_keys['public_key']] = self.public_key
         if self.ip:
             context[context_keys['server_ip_address']] = self.ip.ip_address
             context[
@@ -323,7 +323,7 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         if self._is_backend_type('wireguard'):
             context_keys.update(
                 {
-                    'pub_key': 'pub_key_{}'.format(pk),
+                    'public_key': 'public_key_{}'.format(pk),
                     'ip_address': 'ip_address_{}'.format(pk),
                 }
             )
