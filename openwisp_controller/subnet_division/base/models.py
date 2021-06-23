@@ -159,18 +159,23 @@ class AbstractSubnetDivisionIndex(models.Model):
         swapper.get_model_name('openwisp_ipam', 'Subnet'),
         on_delete=models.CASCADE,
         null=True,
+        blank=True,
     )
     ip = models.ForeignKey(
         swapper.get_model_name('openwisp_ipam', 'IpAddress'),
         on_delete=models.CASCADE,
         null=True,
+        blank=True,
     )
     rule = models.ForeignKey(
         swapper.get_model_name('subnet_division', 'SubnetDivisionRule'),
         on_delete=models.CASCADE,
     )
     config = models.ForeignKey(
-        swapper.get_model_name('config', 'Config'), on_delete=models.CASCADE, null=True
+        swapper.get_model_name('config', 'Config'),
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
 
     class Meta:

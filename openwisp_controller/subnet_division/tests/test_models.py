@@ -366,6 +366,27 @@ class TestSubnetDivisionRule(
             subnet_query.count(), rule.number_of_subnets,
         )
 
+    def test_subnet_division_index_validation(self):
+        rule = self._get_vpn_subdivision_rule()
+        index = SubnetDivisionIndex(rule=rule, keyword='test')
+        subnet = Subnet.objects.create(subnet='10.0.0.0/16')
+        ip = IpAddress.objects.create(subnet=subnet, ip_address='10.0.0.1')
+
+        with self.subTest('ip, subnet and config are missing'):
+            index.full_clean()
+
+        with self.subTest('subnet and config are missing'):
+            index.ip = ip
+            index.full_clean()
+
+        with self.subTest('config is missing'):
+            index.subnet = subnet
+            index.full_clean()
+
+        with self.subTest('All related fields are present'):
+            index.config = self.config
+            index.full_clean()
+
 
 class TestCeleryTasks(TestCase):
     def test_subnet_division_rule_does_not_exist(self):
