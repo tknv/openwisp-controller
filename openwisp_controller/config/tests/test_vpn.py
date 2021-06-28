@@ -175,6 +175,7 @@ class TestVpn(BaseTestVpn, TestCase):
         auto = vpn.auto_client()
         context_keys = vpn._get_auto_context_keys()
         del context_keys['vpn_host']
+        del context_keys['vpn_port']
         for key in context_keys.keys():
             context_keys[key] = '{{%s}}' % context_keys[key]
         control = vpn.backend_class.auto_client(
@@ -204,6 +205,7 @@ class TestVpn(BaseTestVpn, TestCase):
         auto = vpn.auto_client(auto_cert=False)
         context_keys = vpn._get_auto_context_keys()
         del context_keys['vpn_host']
+        del context_keys['vpn_port']
         for key in context_keys.keys():
             context_keys[key] = '{{%s}}' % context_keys[key]
         for key in ['cert_path', 'cert_contents', 'key_path', 'key_contents']:
@@ -243,6 +245,7 @@ class TestVpn(BaseTestVpn, TestCase):
             'key_path': 'key_path_{0}'.format(pk),
             'key_contents': 'key_contents_{0}'.format(pk),
             'vpn_host': 'vpn_host_{0}'.format(pk),
+            'vpn_port': 'vpn_port_{0}'.format(pk),
         }
         self.assertEqual(keys, control)
 
@@ -547,7 +550,9 @@ class TestWireguard(BaseTestVpn, TestWireguardVpnMixin, TestCase):
         for key in context_keys.keys():
             context_keys[key] = '{{%s}}' % context_keys[key]
         expected = template.backend_class.wireguard_auto_client(
-            host=vpn.host, server=self._vpn_config['wireguard'][0], **context_keys
+            host=context_keys['vpn_host'],
+            server=self._vpn_config['wireguard'][0],
+            **context_keys,
         )
         self.assertEqual(auto, expected)
 
@@ -736,7 +741,9 @@ class TestVxlan(BaseTestVpn, TestVxlanWireguardVpnMixin, TestCase):
         for key in context_keys.keys():
             context_keys[key] = '{{%s}}' % context_keys[key]
         expected = template.backend_class.vxlan_wireguard_auto_client(
-            host=vpn.host, server=self._vpn_config['wireguard'][0], **context_keys
+            host=context_keys['vpn_host'],
+            server=self._vpn_config['wireguard'][0],
+            **context_keys,
         )
         self.assertEqual(auto, expected)
 

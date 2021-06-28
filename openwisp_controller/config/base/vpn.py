@@ -255,6 +255,8 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         context_keys = self._get_auto_context_keys()
         if self.host:
             context[context_keys['vpn_host']] = self.host
+        if self._is_backend_type('wireguard'):
+            context[context_keys['vpn_port']] = self.config['wireguard'][0]['port']
         if self.ca:
             ca = self.ca
             # CA
@@ -308,7 +310,10 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
             * vni (VXLAN Network Identifier)
         """
         pk = self.pk.hex
-        context_keys = {'vpn_host': 'vpn_host_{}'.format(pk)}
+        context_keys = {
+            'vpn_host': 'vpn_host_{}'.format(pk),
+            'vpn_port': 'vpn_port_{}'.format(pk),
+        }
         if self._is_backend_type('openvpn'):
             context_keys.update(
                 {
@@ -357,15 +362,16 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
                 for key in ['cert_path', 'cert_contents', 'key_path', 'key_contents']:
                     del context_keys[key]
             config_dict_key = self.backend_class.__name__.lower()
-            context_keys.pop('vpn_host', None)
+            vpn_host = context_keys.pop('vpn_host', self.host)
             if self._is_backend_type('wireguard') and template_backend_class:
                 vpn_auto_client = '{}wireguard_auto_client'.format(
                     'vxlan_' if self._is_backend_type('vxlan') else ''
                 )
                 auto = getattr(template_backend_class, vpn_auto_client)(
-                    host=self.host, server=self.config['wireguard'][0], **context_keys,
+                    host=vpn_host, server=self.config['wireguard'][0], **context_keys,
                 )
             else:
+                del context_keys['vpn_port']
                 auto = backend.auto_client(
                     host=self.host,
                     server=self.config[config_dict_key][0],
