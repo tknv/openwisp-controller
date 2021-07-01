@@ -182,6 +182,8 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
         ).decode('utf-8')
 
     def update_vpn_server_configuration(instance, **kwargs):
+        if not instance._is_backend_type('wireguard'):
+            return
         if instance.webhook_endpoint and instance.auth_token:
             transaction.on_commit(
                 lambda: trigger_vpn_server_endpoint.delay(
@@ -189,6 +191,11 @@ class AbstractVpn(ShareableOrgMixinUniqueName, BaseConfig):
                     auth_token=instance.auth_token,
                     vpn_id=instance.pk,
                 )
+            )
+        else:
+            logger.info(
+                f'Cannot update configuration of {instance.name} VPN server, '
+                'webhook endpoint and authentication token are empty.'
             )
 
     def _auto_create_cert(self):

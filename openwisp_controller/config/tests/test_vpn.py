@@ -620,30 +620,43 @@ class TestWireguardTransaction(BaseTestVpn, TestWireguardVpnMixin, TransactionTe
     def test_update_vpn_server_configuration(self):
         device, vpn, template = self._create_wireguard_vpn_template()
         vpn_client = device.config.vpnclient_set.first()
-        vpn.webhook_endpoint = 'https://example.com'
-        vpn.auth_token = 'super-secret-token'
         vpn.save()
+        with self.subTest('Webhook endpoint and authentication endpoint is absent'):
+            with mock.patch('logging.Logger.info') as mocked_logger:
+                post_save.send(
+                    instance=vpn_client, sender=vpn_client._meta.model, created=False
+                )
+                mocked_logger.assert_called_once_with(
+                    f'Cannot update configuration of {vpn.name} VPN server, '
+                    'webhook endpoint and authentication token are empty.'
+                )
 
-        with mock.patch('logging.Logger.info') as mocked_logger, mock.patch(
-            'requests.post', return_value=HttpResponse()
-        ):
-            post_save.send(
-                instance=vpn_client, sender=vpn_client._meta.model, created=False
-            )
-            mocked_logger.assert_called_once_with(
-                f'Triggered update webhook of VPN Server UUID: {vpn.pk}'
-            )
+        with self.subTest('Webhook endpoint and authentication endpoint is present'):
+            vpn.webhook_endpoint = 'https://example.com'
+            vpn.auth_token = 'super-secret-token'
+            vpn.save()
+            vpn_client.refresh_from_db()
 
-        with mock.patch('logging.Logger.error') as mocked_logger, mock.patch(
-            'requests.post', return_value=HttpResponseNotFound()
-        ):
-            post_save.send(
-                instance=vpn_client, sender=vpn_client._meta.model, created=False
-            )
-            mocked_logger.assert_called_once_with(
-                'Failed to update VPN Server configuration. '
-                f'Response status code: 404, VPN Server UUID: {vpn.pk}'
-            )
+            with mock.patch('logging.Logger.info') as mocked_logger, mock.patch(
+                'requests.post', return_value=HttpResponse()
+            ):
+                post_save.send(
+                    instance=vpn_client, sender=vpn_client._meta.model, created=False
+                )
+                mocked_logger.assert_called_once_with(
+                    f'Triggered update webhook of VPN Server UUID: {vpn.pk}'
+                )
+
+            with mock.patch('logging.Logger.error') as mocked_logger, mock.patch(
+                'requests.post', return_value=HttpResponseNotFound()
+            ):
+                post_save.send(
+                    instance=vpn_client, sender=vpn_client._meta.model, created=False
+                )
+                mocked_logger.assert_called_once_with(
+                    'Failed to update VPN Server configuration. '
+                    f'Response status code: 404, VPN Server UUID: {vpn.pk}'
+                )
 
     def test_vpn_peers_changed(self):
         with self.subTest('VpnClient created'):
