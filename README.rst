@@ -1140,7 +1140,7 @@ Download CA(crl)
 
     GET /api/v1/controller/ca/{id}/crl/
 
-The above endpoint triggers the download of ``{id}.crl`` file containing 
+The above endpoint triggers the download of ``{id}.crl`` file containing
 up to date CRL of that specific CA.
 
 Delete CA
@@ -1886,6 +1886,20 @@ Important Notes
   to provision any IP addresses that have to be created manually. The rest of the master subnet
   address space **must not** be interfered with or the automation implemented in this module
   will not work.
+
+- In the current implementation, it is not possible to change "Size", "Number of Subnets" and
+  "Number of IPs" fields of an existing subnet division rule due to following reasons:
+
+  - **Size**: Allowing to change size of provisioned subnets of an existing subnet division rule
+    will require rebuilding of Subnets and IP addresses which has possibility of breaking
+    existing configurations.
+  - **Number of Subnets**: Allowing to decrease number of subnets of an existing subnet division
+    rule can create patches of unused subnets dispersed everywhere in the master subnet.
+    Allowing to increase number of subnets will break the continuous allocation of subnets for
+    every device. It can also break configuration of devices.
+  - **Number of IPs**: Allowing to decrease number of IPs of an existing subnet division rule
+    will lead to deletion of IP Addresses which can break configuration of devices being used.
+    It **is allowed** to increase number of IPs.
 
 Signals
 -------
